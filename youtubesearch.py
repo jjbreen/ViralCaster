@@ -3,6 +3,7 @@ from apiclient.errors import HttpError
 from oauth2client.tools import argparser
 import random
 import collections
+import math
 import types
 try:
     unicode = unicode
@@ -60,30 +61,27 @@ def youtube_search(q,max_videos):
         if search_result["id"]["kind"] == "youtube#video":
             videos[search_result["id"]["videoId"]] = search_result["snippet"]["title"]
             #videos.append("%s (%s)" % (search_result["snippet"]["title"],search_result["id"]["videoId"]))
-    s=",".join(videos.keys())
-    Y = len(videos)
-    print(Y)
+    
     print ("Videos:\n", "\n".join(videos), "\n")
-    
-    
-    return search_response.get("items", [])
 
-    """"
-    print "test1"
-    videos_list_response = youtube.videos().list(id=s,part='id,statistics').execute()
-    
-    print "test2"
     stats = []
-    for i in videos_list_response['items']:
-        temp_res = dict(v_id = i['id'], v_title = videos[i['id']])
-        temp_res.update(i['statistics'])
-        stats.append(temp_res)
-    print "test3"
-    #print(stats)
-    result = pd.DataFrame.from_dict(stats)
+    for x in range(math.ceil(len(videos.keys()) / max_videos)):
+        maxLength = max_videos*(x+1)
+        if maxLength > len(videos.keys()):
+            s=",".join(list(videos.keys())[max_videos*x:])
+        else:
+            s=",".join(list(videos.keys())[max_videos*x:maxLength])
+        
     
-    print(result)
-    """
+        #return search_response.get("items", [])
+        videos_list_response = youtube.videos().list(id=s,part='id,statistics').execute()
+        for i in videos_list_response['items']:
+            temp_res = dict(v_id = i['id'], v_title = videos[i['id']])
+            temp_res.update(i['statistics'])
+            stats.append(temp_res)
+
+    return search_response.get("items", []), stats
+    
 
 def generateRandomPrefix(psize=5):
     cset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
@@ -92,28 +90,34 @@ def generateRandomPrefix(psize=5):
     for x in range(psize):
         rstr += random.choice(cset)
 
-    print(rstr)
+    print("Generated Random String: %s" % rstr)
     return rstr
 
 def grabYouTubeSample():
     vidSamples = []
-    while len(vidSamples) < 10000:
-        x = 'watch?v='+ generateRandomPrefix()
-        print(x)
+    vidStats = []
+    vidPrefix = []
+    while len(vidStats) < 10000:
+        rPrefix = generateRandomPrefix()
+        vidPrefix.append(rPrefix)
+        x = 'watch?v='+ rPrefix 
         max_videos=50
 
         try:
-            data = youtube_search(x,max_videos)
+            data, stats = youtube_search(x,max_videos)
         except HttpError as e:
             print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
+        print (len(stats))
         data = convertEncoding(data)
-        print (data)
-        vidSamples.append(data)
+        stats = convertEncoding(stats)
+        print (stats)
+        vidSamples += data
+        vidStats += stats
 
-        print("Collected %s Videos!" % (len(vidSamples)))
+        print("Collected %s Videos!" % (len(vidStats)))
     
-    return vidSamples
+    return vidSamples, vidStats
 
 
 def convertEncoding(data):
@@ -126,4 +130,4 @@ def convertEncoding(data):
     else:
         return data
 
-#grabYouTubeSample()
+grabYouTubeSample()
