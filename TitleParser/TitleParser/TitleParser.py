@@ -9,23 +9,25 @@ view_count_dict = {
 
 def parse_videos(videos):
     print "test"
-    video = videos[0]
 
-    title = video["snippet"]["title"].lower()
-    print title
-    title_words = list(set(title.split())) 
-    title_words.sort()
+    #iterate through the list of videos
+    for video in videos:
+
+        #parse out the title into a list
+        title = video["snippet"]["title"].lower()
+        title_words = list(set(title.split())) 
+        title_words.sort()
     
-    #create tuples with 1-4 words and add them and the view count to the
-    #dictionary
-    for i in range(2, 5):
-        print i
-        combos = itertools.combinations(title_words, i)
+        #create tuples with 1-4 words and add them and the view count to the
+        #dictionary
         for s in title_words:
             add_to_dict(1, video, s)
-        for s in combos:
-            add_to_dict(i, video, s)
-    print view_count_dict
+        for i in range(2, 5):
+            print i
+            combos = itertools.combinations(title_words, i)
+            for s in combos:
+                add_to_dict(i, video, s)
+        print view_count_dict
             
 def add_to_dict(i, video, s):
     print s
@@ -39,6 +41,27 @@ def add_to_dict(i, video, s):
 def main():
 
     test_data = [{
+  "kind": "youtube#searchResult",
+  "etag": "",
+  "id": {
+    "kind": "video",
+    "videoId": "369"
+  },
+  "snippet": {
+    "publishedAt": "",
+    "channelId": "985",
+    "title": "epic video title",
+    "description": "",
+    "thumbnails": {
+    },
+    "channelTitle": "",
+    "liveBroadcastContent": ""
+  },
+  "statistics": {
+      "viewCount": 888
+      }
+},
+                 {
   "kind": "youtube#searchResult",
   "etag": "",
   "id": {
