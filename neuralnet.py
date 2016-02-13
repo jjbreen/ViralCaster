@@ -45,7 +45,7 @@ def createNeuralNet(idata, odata, nhidden=20, sigmoid=nonlin_sigmoid):
 	print (odata )
 
 	syn0 = 2 * np.random.random((len(idata[0]), nhidden)) - 1
-	syn1 = 2 * np.random.random((nhidden, 1)) - 1
+	syn1 = 2 * np.random.random((nhidden, len(odata[0]))) - 1
 
 	for j in range(60000):
 
@@ -108,21 +108,28 @@ def crossValidation(idata, odata, k=10):
 
 
 
+def convertIntBinary(dec, bitnum=32):
+	return [int(x) for x in '{0:0{1}b}'.format(dec, bitnum)]
 
+def convertBinaryInt(binary, fix=True):
+	if fix:
+		binary = [str(int(round(x))) for x in binary]
+
+	return int(''.join(binary), 2)
 
 
 def main():
-	k = 10
+	k = 25
 	#idata = [[(math.pi / k * x)] for x in range(k+1)]
 	#random.shuffle(idata)
 	#odata = [[0.5*(math.sin(x[0]) + 1)] for x in idata]
 
-	idata = [[(x-k/2)/k/2] for x in range(k+1)]
-	odata = [(x[0]*k/2)**2 for x in idata]
+	idata = [x for x in range(k+1) if x != 5]
+	odata = [x*2 for x in idata]
 
+	idata = [convertIntBinary(x) for x in idata]
+	odata = [convertIntBinary(x) for x in odata]
 
-	hvalue = max(odata)/2
-	odata = [ [(x-hvalue)/hvalue] for x in odata]
 
 	print (idata)
 	print (odata)
@@ -130,17 +137,19 @@ def main():
 	data2 = [[0,0,1], [0,1,1], [1,0,1],[1,1,1]]
 	odata2 = [[0], [1], [1], [0]]
 
-	#net = createPyBrainNeuralNet(idata, odata)
+	net = createPyBrainNeuralNet(idata, odata)
 	#print(net.activate([math.pi]))
-	net = createNeuralNet(idata, odata, sigmoid=bipolar_sigmoid)
+	#net = createNeuralNet(idata, odata)#, sigmoid=bipolar_sigmoid)
 	#a = crossValidation(idata, odata)
 
 	#print (a )
 
 	print(net)
 
-	pred = predictValue(net, idata, sigmoid=bipolar_sigmoid)
-
-	print (pred)
+	#pred = predictValue(net, [convertIntBinary(5), convertIntBinary(6)])#, sigmoid=bipolar_sigmoid)
+	
+	#pred = [convertBinaryInt(x) for x in pred]
+	print(convertBinaryInt(net.activate(convertIntBinary(5))))
+	#print(pred)
 
 main()

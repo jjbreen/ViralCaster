@@ -5,6 +5,8 @@ import random
 import collections
 import math
 import types
+import datetime
+import csv
 try:
     unicode = unicode
 except NameError:
@@ -20,8 +22,6 @@ else:
     bytes = str
     basestring = basestring
 ##
-import pandas as pd
-
 
 # Set DEVELOPER_KEY to the API key value from the APIs & auth > Registered apps
 # tab of
@@ -74,10 +74,50 @@ def youtube_search(q,max_videos):
         
     
         #return search_response.get("items", [])
-        videos_list_response = youtube.videos().list(id=s,part='id,statistics').execute()
+        videos_list_response = youtube.videos().list(id=s,part='id,statistics,localizations,snippet,contentDetails,projectDetails').execute()
         for i in videos_list_response['items']:
+            print(i.keys())
             temp_res = dict(v_id = i['id'], v_title = videos[i['id']])
             temp_res.update(i['statistics'])
+            temp_res.update(i['contentDetails'])
+            temp_res.update(i['snippet'])
+            del temp_res['thumbnails']
+            temp_res.update(temp_res['localized'])
+            del temp_res['localized']
+            temp_res['publishedAt'] = datetime.datetime.strptime(temp_res['publishedAt'][:19], "%Y-%m-%dT%H:%M:%S")
+            temp_res['publishYear'] = temp_res['publishedAt'].year
+            temp_res['publishDay'] = temp_res['publishedAt'].day
+            temp_res['publishMonth'] = temp_res['publishedAt'].month
+            temp_res['publishHour'] = temp_res['publishedAt'].hour
+            temp_res['publishMinute'] = temp_res['publishedAt'].minute
+            temp_res['publishSecond'] = temp_res['publishedAt'].second
+            del temp_res['publishedAt']
+
+            durationFormat = "P"
+            if 'D' in temp_res['duration']:
+                durationFormat+= "%dD"
+            durationFormat+="T"
+            if 'H' in temp_res['duration']:
+                durationFormat+= "%HH"
+            if 'M' in temp_res['duration']:
+                durationFormat+= "%MM"
+            if 'S' in temp_res['duration']:
+                durationFormat+= "%SS"
+            temp_res['duration'] = datetime.datetime.strptime(temp_res['duration'], durationFormat) 
+            temp_res['durationDay'] = temp_res['duration'].day
+            temp_res['durationHour'] = temp_res['duration'].hour
+            temp_res['durationMinute'] = temp_res['duration'].minute
+            temp_res['durationSecond'] = temp_res['duration'].second
+            del temp_res['duration']
+            if 'tags' in temp_res.keys():
+                temp_res['tagLength'] = len(temp_res['tags'])
+                del temp_res['tags']
+            else:
+                temp_res['tagLength'] = 0
+            if 'regionRestriction' in temp_res.keys():
+                del temp_res['regionRestriction']
+            if 'defaultAudioLanguage' in temp_res.keys():
+                del temp_res['defaultAudioLanguage']
             stats.append(temp_res)
 
     return search_response.get("items", []), stats
@@ -108,17 +148,23 @@ def grabYouTubeSample():
         except HttpError as e:
             print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
-        print (len(stats))
         data = convertEncoding(data)
         stats = convertEncoding(stats)
-        print (stats)
         vidSamples += data
         vidStats += stats
 
         print("Collected %s Videos!" % (len(vidStats)))
-    
-    return vidSamples, vidStats
+        #if (len(stats) >= 1):
+        #    generateCSVfromSamples(stats)
+    return vidStats
 
+def generateCSVfromSamples(samples):
+    keys = samples[0].keys()
+    print (samples)
+    with open('YouTubeData.csv', 'w', encoding='utf8',newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(samples)
 
 def convertEncoding(data):
     if isinstance(data, basestring):
@@ -130,4 +176,5 @@ def convertEncoding(data):
     else:
         return data
 
-grabYouTubeSample()
+
+generateCSVfromSamples(grabYouTubeSample())
