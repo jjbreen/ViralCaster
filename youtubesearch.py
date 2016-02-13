@@ -65,7 +65,7 @@ def youtube_search(q,max_videos):
     print ("Videos:\n", "\n".join(videos), "\n")
 
     stats = []
-    for x in range(math.ceil(len(videos.keys()) / max_videos)):
+    for x in range(int(math.ceil(len(videos.keys()) / max_videos))):
         maxLength = max_videos*(x+1)
         if maxLength > len(videos.keys()):
             s=",".join(list(videos.keys())[max_videos*x:])
@@ -93,29 +93,29 @@ def generateRandomPrefix(psize=5):
     print("Generated Random String: %s" % rstr)
     return rstr
 
-def grabYouTubeSample():
+def grabYouTubeSample(total_videos):
     vidSamples = []
     vidStats = []
     vidPrefix = []
-    while len(vidStats) < 10000:
+    while len(vidStats) < total_videos:
         rPrefix = generateRandomPrefix()
         vidPrefix.append(rPrefix)
         x = 'watch?v='+ rPrefix 
         max_videos=50
 
-        try:
-            data, stats = youtube_search(x,max_videos)
-        except HttpError as e:
-            print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+        #try:
+        data, stats = youtube_search(x,max_videos)
+        #except HttpError as e:
+            #print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
-        print (len(stats))
-        data = convertEncoding(data)
+        print "Stats Length: " + str(len(stats))
+        #data = convertEncoding(data)
         stats = convertEncoding(stats)
-        print (stats)
+        #print (stats)
         vidSamples += data
         vidStats += stats
-
         print("Collected %s Videos!" % (len(vidStats)))
+        print "OF " + str(total_videos)
     
     return vidSamples, vidStats
 
@@ -129,5 +129,3 @@ def convertEncoding(data):
         return type(data)(map(convertEncoding, data))
     else:
         return data
-
-grabYouTubeSample()
