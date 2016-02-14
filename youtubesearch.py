@@ -94,6 +94,8 @@ def youtube_search(q,max_videos):
             del temp_res['publishedAt']
 
             durationFormat = "P"
+            if 'W' in temp_res['duration']:
+                durationFormat+= "%WW"
             if 'D' in temp_res['duration']:
                 durationFormat+= "%dD"
             durationFormat+="T"
@@ -118,6 +120,10 @@ def youtube_search(q,max_videos):
                 del temp_res['regionRestriction']
             if 'defaultAudioLanguage' in temp_res.keys():
                 del temp_res['defaultAudioLanguage']
+            if 'defaultLanguage' in temp_res.keys():
+                del temp_res['defaultLanguage']
+            if 'contentRating' in  temp_res.keys():
+                del temp_res['contentRating']
             stats.append(temp_res)
 
     return search_response.get("items", []), stats
@@ -137,34 +143,44 @@ def grabYouTubeSample():
     vidSamples = []
     vidStats = []
     vidPrefix = []
-    while len(vidStats) < 10000:
-        rPrefix = generateRandomPrefix()
-        vidPrefix.append(rPrefix)
-        x = 'watch?v='+ rPrefix 
-        max_videos=50
+    first = False
+    with open('YouTubeData2.csv', 'w', encoding='utf8',newline='') as output_file:
+        while len(vidStats) < 50000:
 
-        try:
-            data, stats = youtube_search(x,max_videos)
-        except HttpError as e:
-            print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+            rPrefix = generateRandomPrefix()
+            rcount = 0
+            while rPrefix in vidPrefix:
+                rPrefix = generateRandomPrefix()
+                rcount +=1
+                if (rcount >= 10000):
+                    return vidStats
+            vidPrefix.append(rPrefix)
+            x = 'watch?v='+ rPrefix 
+            max_videos=50
 
-        data = convertEncoding(data)
-        stats = convertEncoding(stats)
-        vidSamples += data
-        vidStats += stats
+            try:
+                data, stats = youtube_search(x,max_videos)
+            except HttpError as e:
+                print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
-        print("Collected %s Videos!" % (len(vidStats)))
-        #if (len(stats) >= 1):
-        #    generateCSVfromSamples(stats)
+            data = convertEncoding(data)
+            stats = convertEncoding(stats)
+            vidSamples += data
+            vidStats += stats
+
+            print("Collected %s Videos!" % (len(vidStats)))
+            if (len(stats) >= 1):
+                if first == False:
+                    first = True
+                    keys = stats[0].keys()
+                    dict_writer = csv.DictWriter(output_file, keys)
+                    dict_writer.writeheader()
+                else:
+                    generateCSVfromSamples(stats, dict_writer)
     return vidStats
 
-def generateCSVfromSamples(samples):
-    keys = samples[0].keys()
-    print (samples)
-    with open('YouTubeData.csv', 'w', encoding='utf8',newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(samples)
+def generateCSVfromSamples(samples, dict_writer):
+    dict_writer.writerows(samples)
 
 def convertEncoding(data):
     if isinstance(data, basestring):
