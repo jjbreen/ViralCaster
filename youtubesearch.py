@@ -65,7 +65,7 @@ def youtube_search(q,max_videos):
     print ("Videos:\n", "\n".join(videos), "\n")
 
     stats = []
-    for x in range(math.ceil(len(videos.keys()) / max_videos)):
+    for x in range(int(math.ceil(len(videos.keys()) / max_videos))):
         maxLength = max_videos*(x+1)
         if maxLength > len(videos.keys()):
             s=",".join(list(videos.keys())[max_videos*x:])
@@ -76,7 +76,7 @@ def youtube_search(q,max_videos):
         #return search_response.get("items", [])
         videos_list_response = youtube.videos().list(id=s,part='id,statistics,localizations,snippet,contentDetails,projectDetails').execute()
         for i in videos_list_response['items']:
-            print(i.keys())
+            #print(i.keys())
             temp_res = dict(v_id = i['id'], v_title = videos[i['id']])
             temp_res.update(i['statistics'])
             temp_res.update(i['contentDetails'])
@@ -133,11 +133,11 @@ def generateRandomPrefix(psize=5):
     print("Generated Random String: %s" % rstr)
     return rstr
 
-def grabYouTubeSample():
+def grabYouTubeSample(sample_size):
     vidSamples = []
     vidStats = []
     vidPrefix = []
-    while len(vidStats) < 10000:
+    while len(vidStats) < sample_size:
         rPrefix = generateRandomPrefix()
         vidPrefix.append(rPrefix)
         x = 'watch?v='+ rPrefix 
@@ -145,17 +145,17 @@ def grabYouTubeSample():
 
         try:
             data, stats = youtube_search(x,max_videos)
+            data = convertEncoding(data)
+            stats = convertEncoding(stats)
+            vidSamples += data
+            vidStats += stats
+
+            print("Collected %s Videos!" % (len(vidStats)))
+            #if (len(stats) >= 1):
+            #    generateCSVfromSamples(stats)
         except HttpError as e:
             print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
-        data = convertEncoding(data)
-        stats = convertEncoding(stats)
-        vidSamples += data
-        vidStats += stats
-
-        print("Collected %s Videos!" % (len(vidStats)))
-        #if (len(stats) >= 1):
-        #    generateCSVfromSamples(stats)
     return vidStats
 
 def generateCSVfromSamples(samples):
@@ -177,4 +177,5 @@ def convertEncoding(data):
         return data
 
 
-generateCSVfromSamples(grabYouTubeSample())
+#USE MAIN FUNCTION INSTEAD!!!
+#generateCSVfromSamples(grabYouTubeSample())

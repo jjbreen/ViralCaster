@@ -12,7 +12,7 @@ import youtubesearch as youtube
 
 
 def main():
-    videos, stats = youtube.grabYouTubeSample(100)
+    stats = youtube.grabYouTubeSample(10000)
     #print len(videos)
     print len(stats)
     #print videos
@@ -20,6 +20,8 @@ def main():
     print "FINISHED COLLECTION"
     print "STARTING PARSING"
     TitleParser.parse_videos(stats)
+    print "COMPUTING AVERAGES"
+    TitleParser.compute_average_views()
     print "COMPLETE"
 
 

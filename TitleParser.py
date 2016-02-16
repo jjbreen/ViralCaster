@@ -1,4 +1,7 @@
 import itertools
+import time
+import io
+import csv
 
 view_count_dict = {
 1: {},
@@ -12,7 +15,7 @@ def parse_videos(videos):
     i = 0
     #iterate through the list of videos
     for video in videos:
-        print "Parsing video " + str(++i)
+        print "Parsing video " + video["v_id"]
         #parse out the title into a list
         title = video["v_title"].lower()
         title_words = list(set(title.split())) 
@@ -29,13 +32,48 @@ def parse_videos(videos):
         #print view_count_dict
             
 def add_to_dict(i, video, s):
-    print s
+    #print s
     if s in view_count_dict[i]:
-        print "exists"
+        #print "exists"
         view_count_dict[i][s].append(video["viewCount"])
     else:
-        print "not exists"
+        #print "not exists"
         view_count_dict[i][s] = [video["viewCount"]]
+
+
+def compute_average_views():
+    summarized_views_dict = {}
+    max_avg_views = 0
+    max_avg_views_words = ""
+
+    for size in view_count_dict:
+        dict = view_count_dict[size]   
+        for words in dict:
+            summarized_views_dict[words] = {}
+            views = [int(x) for x in dict[words]]
+            summarized_views_dict[words]["words"] = words
+            summarized_views_dict[words]["average"] = str(sum(views) / len(views))
+            summarized_views_dict[words]["max"] = str(max(views))
+            summarized_views_dict[words]["min"] = str(min(views))
+            if  str(sum(views) / len(views)) > max_avg_views:
+                max_avg_views =  str(sum(views) / len(views))
+                max_avg_views_words = words
+
+    print "BEST AVERAGE: " + str(max_avg_views) + " with: " + str(max_avg_views_words)
+    print summarized_views_dict[max_avg_views_words]
+    write_summary(summarized_views_dict)
+
+def write_summary(summarized_views_dict):
+    print "OPENING"
+    with open('titleData.csv', 'w') as output_file:
+        print "OPEN"
+        keys = ['words', 'average', 'max', 'min']
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        for summary in summarized_views_dict:
+            print "Writing Line"
+            print summarized_views_dict[summary]
+            dict_writer.writerow(summarized_views_dict[summary])
 
 def main():
 
