@@ -12,7 +12,7 @@ import youtubesearch as youtube
 
 
 def main():
-    stats = youtube.grabYouTubeSample(10000)
+    stats = youtube.grabYouTubeSample(100)
     #print len(videos)
     print len(stats)
     #print videos

@@ -25,7 +25,7 @@ def parse_videos(videos):
         #dictionary
         for s in title_words:
             add_to_dict(1, video, s)
-        for i in range(2, 5):
+        for i in range(2, 4):
             combos = itertools.combinations(title_words, i)
             for s in combos:
                 add_to_dict(i, video, s)
@@ -55,13 +55,14 @@ def compute_average_views():
             summarized_views_dict[words]["average"] = str(sum(views) / len(views))
             summarized_views_dict[words]["max"] = str(max(views))
             summarized_views_dict[words]["min"] = str(min(views))
-            if  str(sum(views) / len(views)) > max_avg_views:
+            if str(sum(views) / len(views)) > max_avg_views:
                 max_avg_views =  str(sum(views) / len(views))
                 max_avg_views_words = words
 
     print "BEST AVERAGE: " + str(max_avg_views) + " with: " + str(max_avg_views_words)
     print summarized_views_dict[max_avg_views_words]
     write_summary(summarized_views_dict)
+    create_metric()
 
 def write_summary(summarized_views_dict):
     print "OPENING"
@@ -71,9 +72,33 @@ def write_summary(summarized_views_dict):
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         for summary in summarized_views_dict:
-            print "Writing Line"
-            print summarized_views_dict[summary]
+            #print "Writing Line"
+            #print summarized_views_dict[summary]
             dict_writer.writerow(summarized_views_dict[summary])
+
+def create_metric():
+    dict = view_count_dict[1]
+    max_avg = 0
+
+    for words in dict:
+        views = [int(x) for x in dict[words]]
+        avg = sum(views) / float(len(views))
+        if avg > max_avg:
+            max_avg = avg
+
+    with open('metricData.csv', 'w') as output_file:
+        print "OPEN"
+        keys = ['word', 'value']
+        dict_writer = csv.DictWriter(output_file, keys, lineterminator='\n',)
+        dict_writer.writeheader() 
+
+        for words in dict:
+            views = [int(x) for x in dict[words]]
+            avg = sum(views) / float(len(views))
+            value = avg/max_avg
+            out = {"word": words, "value": value}
+            dict_writer.writerow(out)
+
 
 def main():
 
