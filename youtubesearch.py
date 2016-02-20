@@ -4,6 +4,7 @@ from oauth2client.tools import argparser
 import random
 import collections
 import math
+import os
 import types
 import datetime
 import csv
@@ -111,19 +112,35 @@ def youtube_search(q,max_videos):
             temp_res['durationMinute'] = temp_res['duration'].minute
             temp_res['durationSecond'] = temp_res['duration'].second
             del temp_res['duration']
+
             if 'tags' in temp_res.keys():
                 temp_res['tagLength'] = len(temp_res['tags'])
-                del temp_res['tags']
+                #temp_res['tags']
             else:
                 temp_res['tagLength'] = 0
-            if 'regionRestriction' in temp_res.keys():
-                del temp_res['regionRestriction']
-            if 'defaultAudioLanguage' in temp_res.keys():
-                del temp_res['defaultAudioLanguage']
+                temp_res['tags'] = []
+            if 'regionRestriction' not in temp_res.keys():
+                temp_res['regionRestriction'] = None
+            if 'defaultAudioLanguage' not in temp_res.keys():
+                temp_res['defaultAudioLanguage'] = None
             if 'defaultLanguage' in temp_res.keys():
-                del temp_res['defaultLanguage']
+                temp_res['defaultLanguage'] = None
             if 'contentRating' in  temp_res.keys():
-                del temp_res['contentRating']
+                temp_res['contentRating'] = None
+            if 'title' in temp_res.keys():
+                temp_res['titleLength'] = len(temp_res['title'])
+                #temp_res['title']
+                #temp_res['v_title']
+            if 'description' in temp_res.keys():
+                temp_res['descriptionLength'] = len(temp_res['description'])
+                #temp_res['description']
+            if 'channelTitle' in temp_res.keys():
+                temp_res['channelTitleLength'] = len(temp_res['channelTitle'])
+                #temp_res['channelTitle']
+
+            print (temp_res['channelId'])
+            #temp_res['channelId']
+            #temp_res['v_id']
             stats.append(temp_res)
 
     return search_response.get("items", []), stats
@@ -143,8 +160,17 @@ def grabYouTubeSample():
     vidSamples = []
     vidStats = []
     vidPrefix = []
+    
+    fileName = 'StringDataForConversion.csv'
     first = False
-    with open('YouTubeData2.csv', 'w', encoding='utf8',newline='') as output_file:
+    writeKeys = True
+    fileattr = 'w'
+    if os.path.exists(fileName):
+        writeKeys = False
+        fileattr = 'a'
+
+    with open(fileName, fileattr, encoding='utf8',newline='') as output_file:
+        output_file.seek(2)
         while len(vidStats) < 50000:
 
             rPrefix = generateRandomPrefix()
@@ -163,8 +189,8 @@ def grabYouTubeSample():
             except HttpError as e:
                 print ("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
-            data = convertEncoding(data)
-            stats = convertEncoding(stats)
+            #data = convertEncoding(data)
+            #stats = convertEncoding(stats)
             vidSamples += data
             vidStats += stats
 
@@ -172,9 +198,10 @@ def grabYouTubeSample():
             if (len(stats) >= 1):
                 if first == False:
                     first = True
-                    keys = stats[0].keys()
-                    dict_writer = csv.DictWriter(output_file, keys)
-                    dict_writer.writeheader()
+                    keys = sorted(stats[0].keys())
+                    dict_writer = csv.DictWriter(output_file, keys, delimiter="|")
+                    if writeKeys:
+                        dict_writer.writeheader()
                 else:
                     generateCSVfromSamples(stats, dict_writer)
     return vidStats
@@ -192,5 +219,46 @@ def convertEncoding(data):
     else:
         return data
 
+def fixViewCount():
+    readFile = 'NoNullYouTubeData5.csv'
+    data = []
 
-generateCSVfromSamples(grabYouTubeSample())
+    with open(readFile, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row['viewCount'] = int(row['viewCount'])
+            if row['viewCount'] <= 10:
+                row['viewCount'] = '0-10'
+            elif row['viewCount'] <= 100:
+                row['viewCount'] = '11-100'
+            elif row['viewCount'] <= 1000:
+                row['viewCount'] = '101-1,000'
+            elif row['viewCount'] <= 10000:
+                row['viewCount'] = '1,001-10,000'
+            elif row['viewCount'] <= 100000:
+                row['viewCount'] = '10,001-100,000'
+            elif row['viewCount'] <= 1000000:
+                row['viewCount'] = '100,001-1,000,000'
+            else:
+                row['viewCount'] = '1,000,000+'
+            data.append(row)
+
+    with open("Fixed"+readFile,'w',encoding='utf8',newline='') as output_file:
+        keys = data[0].keys()
+        writer = csv.DictWriter(output_file, keys)
+        writer.writeheader()
+        writer.writerows(data)
+
+def fixNullByte():
+    readFile = 'YouTubeData5.csv'
+    data = ''
+
+    with open(readFile) as fd:
+        data = fd.read()
+
+    with open("NoNull"+readFile, 'w') as fo:
+        fo.write(data.replace('\x00', ''))
+
+#fixNullByte()
+#fixViewCount()
+grabYouTubeSample()

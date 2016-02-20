@@ -5,6 +5,7 @@ from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.datasets import SupervisedDataSet
 from pybrain.structure import TanhLayer
+import csv
 
 # sigmoid function
 def nonlin_sigmoid(x, deriv=False):
@@ -28,7 +29,7 @@ def createPyBrainNeuralNet(idata, odata, nhidden=20):
 
 	trainer = BackpropTrainer(net, ds)
 	#trainer.trainUntilConvergence()
-	for x in range(60000):
+	for x in range(50000):
 		if x % 1000 == 0:
 			print(trainer.train())
 	
@@ -47,7 +48,7 @@ def createNeuralNet(idata, odata, nhidden=20, sigmoid=nonlin_sigmoid):
 	syn0 = 2 * np.random.random((len(idata[0]), nhidden)) - 1
 	syn1 = 2 * np.random.random((nhidden, len(odata[0]))) - 1
 
-	for j in range(60000):
+	for j in range(50000):
 
 		l0 = idata
 		l1 = sigmoid(np.dot(l0, syn0))
@@ -118,26 +119,62 @@ def convertBinaryInt(binary, fix=True):
 	return int(''.join(binary), 2)
 
 
+def createNNetFromYTSample():
+    readFile = 'FixedNoNullYouTubeData5.csv'
+    idata = []
+    odata = []
+    targetmap = {}
+    targetnum = 1
+    datamap = {}
+    itemmap = {}
+
+    with open(readFile, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+        	if row['viewCount'] not in targetmap:
+        		targetmap[row['viewCount']] = targetnum
+        		targetnum += 1
+        	odata.append([targetmap[row['viewCount']]])
+        	del row['viewCount']
+        	for x in row:
+        		try:
+        			int(row[x])
+        		except:
+        			if x not in datamap:
+        				datamap[x] = 1
+        			if row[x] not in itemmap:
+        				itemmap[row[x]] = datamap[x]
+        			row[x] = itemmap[row[x]]
+        	idata.append(list(row.values()))
+
+    return idata, odata, targetmap
+
+
+
 def main():
 	k = 25
 	#idata = [[(math.pi / k * x)] for x in range(k+1)]
 	#random.shuffle(idata)
 	#odata = [[0.5*(math.sin(x[0]) + 1)] for x in idata]
 
-	idata = [x for x in range(k+1) if x != 5]
-	odata = [x*2 for x in idata]
+	#idata = [[x] for x in range(k+1) if x != 5]
+	#odata = [[x[0]*2] for x in idata]
 
-	idata = [convertIntBinary(x) for x in idata]
-	odata = [convertIntBinary(x) for x in odata]
+	#idata = [convertIntBinary(x) for x in idata]
+	#odata = [convertIntBinary(x) for x in odata]
 
 
-	print (idata)
-	print (odata)
+	#print (idata)
+	#print (odata)
 
-	data2 = [[0,0,1], [0,1,1], [1,0,1],[1,1,1]]
-	odata2 = [[0], [1], [1], [0]]
+	idata, odata, tmap = createNNetFromYTSample()
+	idata = idata[:20000]
+	odata = odata[:20000]
 
-	net = createPyBrainNeuralNet(idata, odata)
+	#data2 = [[0,0,1], [0,1,1], [1,0,1],[1,1,1]]
+	#odata2 = [[0], [1], [1], [0]]
+
+	net = createPyBrainNeuralNet(idata[:int(len(idata)*.9)], odata[:int(len(odata) * .9)])
 	#print(net.activate([math.pi]))
 	#net = createNeuralNet(idata, odata)#, sigmoid=bipolar_sigmoid)
 	#a = crossValidation(idata, odata)
@@ -149,7 +186,18 @@ def main():
 	#pred = predictValue(net, [convertIntBinary(5), convertIntBinary(6)])#, sigmoid=bipolar_sigmoid)
 	
 	#pred = [convertBinaryInt(x) for x in pred]
-	print(convertBinaryInt(net.activate(convertIntBinary(5))))
+
+	start = idata[int(len(idata) * .9):]
+	end = odata[int(len(idata) * .9):]
+	nwrong = 0
+	for x in range(len(start)):
+		pred = [round(net.activate(start[x])[0])]
+		if pred != end[x]:
+			print("Prediction: %s Did Not Match Actual: %s" % (pred, end[x]))
+			nwrong += 1
+
+
+	print (nwrong / len(start))
 	#print(pred)
 
 main()
