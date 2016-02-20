@@ -8,6 +8,7 @@ import os
 import types
 import datetime
 import csv
+import TitleParser
 try:
     unicode = unicode
 except NameError:
@@ -123,9 +124,9 @@ def youtube_search(q,max_videos):
                 temp_res['regionRestriction'] = None
             if 'defaultAudioLanguage' not in temp_res.keys():
                 temp_res['defaultAudioLanguage'] = None
-            if 'defaultLanguage' in temp_res.keys():
+            if 'defaultLanguage' not in temp_res.keys():
                 temp_res['defaultLanguage'] = None
-            if 'contentRating' in  temp_res.keys():
+            if 'contentRating' not in  temp_res.keys():
                 temp_res['contentRating'] = None
             if 'title' in temp_res.keys():
                 temp_res['titleLength'] = len(temp_res['title'])
@@ -138,7 +139,6 @@ def youtube_search(q,max_videos):
                 temp_res['channelTitleLength'] = len(temp_res['channelTitle'])
                 #temp_res['channelTitle']
 
-            print (temp_res['channelId'])
             #temp_res['channelId']
             #temp_res['v_id']
             stats.append(temp_res)
@@ -171,7 +171,7 @@ def grabYouTubeSample():
 
     with open(fileName, fileattr, encoding='utf8',newline='') as output_file:
         output_file.seek(2)
-        while len(vidStats) < 50000:
+        while len(vidStats) < 20000:
 
             rPrefix = generateRandomPrefix()
             rcount = 0
@@ -261,4 +261,8 @@ def fixNullByte():
 
 #fixNullByte()
 #fixViewCount()
-grabYouTubeSample()
+s = grabYouTubeSample()
+TitleParser.parse_videos(s)
+TitleParser.compute_average_views()
+TitleParser.gen_compute_average_views(TitleParser.description_dict, 'DescriptionData.csv')
+TitleParser.gen_compute_average_views(TitleParser.tag_dict, 'TagData.csv')
